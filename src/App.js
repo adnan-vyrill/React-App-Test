@@ -6,6 +6,7 @@ function App() {
     <div className="App">
       <header className="App-header">
        <h1>Test</h1>
+       {console.log("helloWorld")}
       </header>
     </div>
   );
