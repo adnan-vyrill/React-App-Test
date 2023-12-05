@@ -1,31 +1,48 @@
+name: CI/CD
+
 on:
   push:
-    branches:
-      - master
-name: release-please
+    branches: [master]
+  pull_request:
+    branches: [master]
+
 jobs:
-  release-please:
+  build:
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
     steps:
-      - uses: GoogleCloudPlatform/release-please-action@v3
-        id: release
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: node
-          package-name: standard-version
-      # The logic below handles the npm publication:
-      - uses: actions/checkout@v4
-        # these if statements ensure that a publication only occurs when
-        # a new release is created:
-        if: ${{ steps.release.outputs.release_created }}
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 12
-          registry-url: 'https://external-dot-oss-automation.appspot.com'
-        if: ${{ steps.release.outputs.release_created }}
-      - run: npm ci
-        if: ${{ steps.release.outputs.release_created }}
-      - run: npm publish
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run the tests and generate coverage report
+        run: npm test -- --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy
+        run: |
+          git config user.name $adnan-vyrill
+          git config user.email $adnan@vyrill.com
+          git remote set-url origin "https://${github_token}@github.com/${repository}"
+          npm run deploy
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
-        if: ${{ steps.release.outputs.release_created }}
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@adnan-vyrill.noreply.github.com'
+          github_token: ${{ secrets.ACTIONS_DEPLOY_ACCESS_TOKEN }}
+          repository: ${{ github.repository }}
