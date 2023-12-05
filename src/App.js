@@ -8,7 +8,6 @@ function App() {
     <div className="App">
       <header className="App-header">
         <h1>Test {version}</h1>
-        {console.log("helloWorld")}
         <p>Version: {process.env.REACT_APP_VERSION}</p>
       </header>
     </div>
